@@ -5,15 +5,33 @@
         </h2>
         <!-- DataTables CSS -->
         <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+        <!-- SweetAlert2 CSS -->
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     </x-slot>
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
             @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
-                    <span class="block sm:inline">{{ session('success') }}</span>
-                </div>
+                <script>
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil',
+                        text: '{{ session('success') }}',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                </script>
+            @endif
+
+            @if(session('error'))
+                <script>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: '{{ session('error') }}',
+                    });
+                </script>
             @endif
 
             <div class="mb-4 flex justify-end">
@@ -54,10 +72,10 @@
                                     <td class="px-6 py-4 text-center">
                                         <div class="flex items-center justify-center space-x-4">
                                             <a href="{{ route('dashboard.produk.edit', $produk->id) }}" class="text-blue-500 hover:text-blue-700 font-semibold">Edit</a>
-                                            <form action="{{ route('dashboard.produk.destroy', $produk->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus produk ini?');" class="inline">
+                                            <form id="delete-form-{{ $produk->id }}" action="{{ route('dashboard.produk.destroy', $produk->id) }}" method="POST" class="inline">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="text-red-500 hover:text-red-700 font-semibold">Hapus</button>
+                                                <button type="button" onclick="confirmDelete({{ $produk->id }})" class="text-red-500 hover:text-red-700 font-semibold">Hapus</button>
                                             </form>
                                         </div>
                                     </td>
@@ -78,6 +96,23 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script>
+        function confirmDelete(id) {
+            Swal.fire({
+                title: 'Apakah Anda yakin?',
+                text: "Produk yang dihapus tidak dapat dikembalikan!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Ya, hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('delete-form-' + id).submit();
+                }
+            })
+        }
+
         $(document).ready(function() {
             $('#productTable').DataTable({
                 "language": {

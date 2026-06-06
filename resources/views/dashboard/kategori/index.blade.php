@@ -5,21 +5,55 @@
         </h2>
         <!-- DataTables CSS -->
         <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+        <!-- SweetAlert2 CSS (optional, but good) -->
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     </x-slot>
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
             @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
-                    <span class="block sm:inline">{{ session('success') }}</span>
-                </div>
+                <script>
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil',
+                        text: '{{ session('success') }}',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                </script>
+            @endif
+
+            @if(session('error'))
+                <script>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: '{{ session('error') }}',
+                    });
+                </script>
+            @endif
+
+            @if ($errors->any())
+                <script>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Ada Kesalahan',
+                        html: `
+                            <ul class="text-left list-disc list-inside">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        `,
+                    });
+                </script>
             @endif
 
             <div class="mb-4 flex justify-end">
-                <a href="{{ route('dashboard.kategori.create') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                <button type="button" onclick="openCreateAlert()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                     + Tambah Kategori
-                </a>
+                </button>
             </div>
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -43,12 +77,8 @@
                                     <td class="px-6 py-4">{{ $kategori->products_count ?? 0 }}</td>
                                     <td class="px-6 py-4 text-center">
                                         <div class="flex items-center justify-center space-x-4">
-                                            <a href="{{ route('dashboard.kategori.edit', $kategori->id) }}" class="text-blue-500 hover:text-blue-700 font-semibold">Edit</a>
-                                            <form action="{{ route('dashboard.kategori.destroy', $kategori->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kategori ini?');" class="inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="text-red-500 hover:text-red-700 font-semibold">Hapus</button>
-                                            </form>
+                                            <button type="button" onclick="openEditAlert({{ $kategori->id }}, '{{ addslashes($kategori->name) }}')" class="text-blue-500 hover:text-blue-700 font-semibold">Edit</button>
+                                            <button type="button" onclick="confirmDelete({{ $kategori->id }})" class="text-red-500 hover:text-red-700 font-semibold">Hapus</button>
                                         </div>
                                     </td>
                                 </tr>
@@ -64,10 +94,96 @@
         </div>
     </div>
 
+    <!-- Hidden Forms for SweetAlert2 Submission -->
+    <form id="createForm" action="{{ route('dashboard.kategori.store') }}" method="POST" class="hidden">
+        @csrf
+        <input type="hidden" name="name" id="create_name">
+    </form>
+
+    <form id="editForm" method="POST" class="hidden">
+        @csrf
+        @method('PUT')
+        <input type="hidden" name="name" id="edit_name">
+    </form>
+    
+    <form id="deleteForm" method="POST" class="hidden">
+        @csrf
+        @method('DELETE')
+    </form>
+
     <!-- jQuery and DataTables JS -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script>
+        const baseUrl = "{{ url('dasboard/kategori') }}";
+
+        function openCreateAlert() {
+            Swal.fire({
+                title: 'Tambah Kategori',
+                input: 'text',
+                inputPlaceholder: 'Masukkan nama kategori',
+                showCancelButton: true,
+                confirmButtonText: 'Simpan',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#3b82f6',
+                cancelButtonColor: '#6b7280',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Nama kategori tidak boleh kosong!'
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('create_name').value = result.value;
+                    document.getElementById('createForm').submit();
+                }
+            });
+        }
+
+        function openEditAlert(id, name) {
+            Swal.fire({
+                title: 'Edit Kategori',
+                input: 'text',
+                inputValue: name,
+                inputPlaceholder: 'Masukkan nama kategori',
+                showCancelButton: true,
+                confirmButtonText: 'Update',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#3b82f6',
+                cancelButtonColor: '#6b7280',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Nama kategori tidak boleh kosong!'
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('edit_name').value = result.value;
+                    document.getElementById('editForm').action = baseUrl + '/' + id;
+                    document.getElementById('editForm').submit();
+                }
+            });
+        }
+
+        function confirmDelete(id) {
+            Swal.fire({
+                title: 'Apakah Anda yakin?',
+                text: "Kategori yang dihapus tidak dapat dikembalikan!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Ya, hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const form = document.getElementById('deleteForm');
+                    form.action = baseUrl + '/' + id;
+                    form.submit();
+                }
+            })
+        }
+
         $(document).ready(function() {
             $('#categoryTable').DataTable({
                 "language": {

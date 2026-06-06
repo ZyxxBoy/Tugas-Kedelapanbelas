@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-
 use App\Models\Product;
 use App\Models\ProductCategory;
 use Illuminate\Support\Str;
@@ -55,7 +54,7 @@ class ProductController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Product $produk)
+    public function show(string $id)
     {
         //
     }
@@ -63,8 +62,9 @@ class ProductController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Product $produk)
+    public function edit(string $id)
     {
+        $produk = Product::findOrFail($id);
         $categories = ProductCategory::all();
         return view('dashboard.produk.edit', compact('produk', 'categories'));
     }
@@ -72,7 +72,7 @@ class ProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Product $produk)
+    public function update(Request $request, string $id)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -83,6 +83,7 @@ class ProductController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
+        $produk = Product::findOrFail($id);
         $data = $request->all();
         $data['slug'] = Str::slug($request->name);
 
@@ -101,8 +102,10 @@ class ProductController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Product $produk)
+    public function destroy(string $id)
     {
+        $produk = Product::findOrFail($id);
+        
         if ($produk->image) {
             Storage::disk('public')->delete($produk->image);
         }
