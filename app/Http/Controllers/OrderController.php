@@ -12,7 +12,8 @@ class OrderController
      */
     public function index()
     {
-        //
+        $orders = Order::orderBy('created_at', 'desc')->get();
+        return view('dashboard.order.index', compact('orders'));
     }
 
     /**
